@@ -10,6 +10,8 @@ from dipy.viz import regtools
 
 
 def exampleDipy():
+	
+    # example obtained from: http://nipy.org/dipy/examples_built/syn_registration_2d.html
     import ssl
     if hasattr(ssl, '_create_unverified_context'):
         ssl._create_default_https_context = ssl._create_unverified_context
