@@ -63,44 +63,6 @@ print(__doc__)
 # from :ref:`LCMV beamformer inverse example
 # <sphx_glr_auto_examples_inverse_plot_lcmv_beamformer_volume.py>`
 
-def save_mapping(fname, data, overwrite=True):
-    out = []
-
-    # dissolve object structure
-    for d in data:
-        d_dict = d.__dict__
-        # save type for order independent decomposition
-        d_dict['type'] = type(d).__name__
-        out.append(d_dict)
-
-    write_hdf5(fname, out, overwrite=overwrite)
-
-
-def load_mapping(fname):
-    # create new instance
-    mapping = imwarp.DiffeomorphicMap(None, [])
-    affine = imaffine.AffineMap(None)
-
-    data = read_hdf5(fname)
-
-    for d in data:
-
-        d_type = d.get('type')
-        del d['type']
-
-        # make reading independent of save order
-        if d_type == 'DiffeomorphicMap':
-            mapping.__dict__ = d
-
-        elif d_type == 'AffineMap':
-            affine.__dict__ = d
-
-        else:
-            raise ValueError('invalid data')
-
-    return mapping, affine
-
-
 def compute_lcmv_example_data(data_path, fname=None):
     raw_fname = data_path + '/MEG/sample/sample_audvis_raw.fif'
     event_fname = data_path + '/MEG/sample/sample_audvis_raw-eve.fif'
@@ -163,7 +125,7 @@ def compute_lcmv_example_data(data_path, fname=None):
 
     # select time window (tmin, tmax) in ms - consider changing for real data
     # scenario, since those values were chosen to optimize computation time
-    stc.crop(0.0, 0.01)
+    stc.crop(0.0, 0.0)
 
     # Save result in a 4D nifti file
     img = mne.save_stc_as_volume(fname, stc, forward['src'],
@@ -240,6 +202,48 @@ def compute_morph_map(img_m, img_s=None, niter_affine=(100, 100, 10),
 
 
 ###############################################################################
+# Save non linear mapping data
+def save_mapping(fname, data, overwrite=True):
+    out = []
+
+    # dissolve object structure
+    for d in data:
+        d_dict = d.__dict__
+        # save type for order independent decomposition
+        d_dict['type'] = type(d).__name__
+        out.append(d_dict)
+
+    write_hdf5(fname, out, overwrite=overwrite)
+
+
+###############################################################################
+# Load non linear mapping data
+def load_mapping(fname):
+    # create new instance
+    mapping = imwarp.DiffeomorphicMap(None, [])
+    affine = imaffine.AffineMap(None)
+
+    data = read_hdf5(fname)
+
+    for d in data:
+
+        d_type = d.get('type')
+        del d['type']
+
+        # make reading independent of save order
+        if d_type == 'DiffeomorphicMap':
+            mapping.__dict__ = d
+
+        elif d_type == 'AffineMap':
+            affine.__dict__ = d
+
+        else:
+            raise ValueError('invalid data')
+
+    return mapping, affine
+
+
+###############################################################################
 # Apply non-linear morph mapping
 
 def morph_precomputed(img, affine, mapping):
@@ -310,7 +314,7 @@ img_vol_res, t1_m_img_res, t1_s_img_res = prepare_volume_example_data(
     img,
     data_path + '/subjects/sample/mri/brain.mgz',
     data_path + '/subjects/fsaverage/mri/brain.mgz',
-    voxel_size=(3., 3., 3.))
+    voxel_size=(5., 5., 5.))
 
 # compute morph map from Moving to Static
 mapping, affine = compute_morph_map(t1_m_img_res, t1_s_img_res)
