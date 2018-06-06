@@ -120,8 +120,7 @@ def compute_lcmv_example_data(data_path, fname=None):
     stc.data[:, :] = np.abs(stc.data)
 
     # Save result in stc files
-    if fname is not None:
-        stc.save('lcmv-vol')
+    stc.save('lcmv-vol')
 
     # select time window (tmin, tmax) in ms - consider changing for real data
     # scenario, since those values were chosen to optimize computation time
@@ -319,9 +318,11 @@ img_vol_res, t1_m_img_res, t1_s_img_res = prepare_volume_example_data(
 # compute morph map from Moving to Static
 mapping, affine = compute_morph_map(t1_m_img_res, t1_s_img_res)
 
-save_mapping('fsaverageMapping', [mapping, affine])
+save_mapping(data_path + '/subjects/morph-maps/subject-fsaverage-morph',
+             [mapping, affine])
 
-mapping, affine = load_mapping('fsaverageMapping')
+mapping, affine = load_mapping(
+    data_path + '/subjects/morph-maps/subject-fsaverage-morph')
 
 # apply morph map
 img_vol_morphed = morph_precomputed(img_vol_res, mapping, affine)
@@ -331,7 +332,8 @@ img_vol_morphed = nib.Nifti1Image(img_vol_morphed,
                                   affine=t1_s_img_res.affine)
 
 # save morphed result
-nib.save(img_vol_morphed, 'lcmv_inverse_fsavg.nii.gz')
+nib.save(img_vol_morphed,
+         data_path + '/subjects/fsaverage/src/lcmv-fsaverage.nii.gz')
 
 ###############################################################################
 # Save result plots
@@ -349,8 +351,9 @@ titles = ['subject brain', 'fsaverage brian',
           'fsaverage brian\nmorphed source']
 
 # file names for saving plots
-saveas = ['lcmv_subject.png', 'lcmv_fsaverage.png',
-          'lcmv_fsaverage_morphed.png']
+saveas = [data_path + '/subjects/fsaverage/src/' + res_img for res_img in
+          ['lcmv-subject.png', 'lcmv-fsaverage.png',
+           'lcmv-fsaverage-morphed.png']]
 
 # plot and save
 for img, t1_img, title, fname in zip(imgs, t1_imgs, titles, saveas):
