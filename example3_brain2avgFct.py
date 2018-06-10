@@ -127,7 +127,7 @@ def compute_lcmv_example_data(data_path, fname=None):
 
     # select time window (tmin, tmax) in ms - consider changing for real data
     # scenario, since those values were chosen to optimize computation time
-    stc.crop(0.0, 0.0)
+    stc.crop(0.087, 0.087)
 
     # Save result in a 4D nifti file
     img = mne.save_stc_as_volume(fname, stc, forward['src'],
@@ -215,7 +215,7 @@ def save_mapping(fname, data, overwrite=True):
         d_dict['type'] = type(d).__name__
         out.append(d_dict)
 
-    write_hdf5(fname, out, overwrite=overwrite)
+    write_hdf5(fname + '.h5', out, overwrite=overwrite)
 
 
 ###############################################################################
@@ -225,7 +225,7 @@ def load_mapping(fname):
     mapping = imwarp.DiffeomorphicMap(None, [])
     affine = imaffine.AffineMap(None)
 
-    data = read_hdf5(fname)
+    data = read_hdf5(fname + '.h5')
 
     for d in data:
 
@@ -256,6 +256,26 @@ def morph_precomputed(img, affine, mapping):
             affine.transform(img.dataobj[:, :, :, vol]))
 
     return img_sdr_affine
+
+
+###############################################################################
+# Morph 3D coordinates. This is used to transform the respective slices shown
+# in the output such that the field of view if more or less similar. Note that
+# this is necessary, because shown volumes will be positioned differently in
+# the volume bounding box.
+def morph_slice_indices(slice_indices, transmat):
+    # make sure array is 2D
+    slice_indices = np.atleast_2d(slice_indices)
+
+    # add a column of ones
+    slice_indices = np.append(slice_indices,
+                              np.ones((slice_indices.shape[0], 1)), axis=1)
+
+    # matrix multiplication with transformation matrix
+    slice_indices_out = np.einsum('...j,ij', slice_indices, transmat)
+
+    # round to select valid slices and remove last column
+    return np.round(slice_indices_out[:, :-1])
 
 
 ###############################################################################
@@ -324,11 +344,9 @@ img_vol_res, t1_m_img_res, t1_s_img_res = prepare_volume_example_data(
 # compute morph map from Moving to Static
 mapping, affine = compute_morph_map(t1_m_img_res, t1_s_img_res)
 
-save_mapping(data_path + '/subjects/morph-maps/subject-fsaverage-morph',
-             [mapping, affine])
+save_mapping('subject-fsaverage-morph', [mapping, affine])
 
-mapping, affine = load_mapping(
-    data_path + '/subjects/morph-maps/subject-fsaverage-morph')
+mapping, affine = load_mapping('subject-fsaverage-morph')
 
 # apply morph map
 img_vol_morphed = morph_precomputed(img_vol_res, mapping, affine)
@@ -338,8 +356,7 @@ img_vol_morphed = nib.Nifti1Image(img_vol_morphed,
                                   affine=t1_s_img_res.affine)
 
 # save morphed result
-nib.save(img_vol_morphed,
-         data_path + '/subjects/fsaverage/src/lcmv-fsaverage.nii.gz')
+nib.save(img_vol_morphed, 'lcmv-fsaverage.nii.gz')
 
 ###############################################################################
 # Plot results
@@ -358,18 +375,19 @@ slices_s = (-10, 0, 0)
 # slices to show for Moving volume
 # to show roughly the same view, we transform the selected Static slices using
 # the inverse affine transformation. Note that due to rotation and the
-# non-linear transform, both views do not overlap perfectly
-slices_m = tuple(
-    np.round(np.matmul(affine.affine_inv, (slices_s + (1,))))[:-1])
+# non-linear transform, both views do not overlap perfectly (pre computed for
+# this example)
+slices_m = morph_slice_indices(np.atleast_2d(slices_s), affine.affine_inv)[0]
 
-slices = [slices_s, slices_s, slices_m]
+slices = [slices_s, slices_s, tuple(slices_m)]
 
 # define titles for plots
 titles = ['subject brain', 'fsaverage brain', 'fsaverage brain morphed result']
 
 # plot results
 figure, (axes1, axes2, axes3) = plt.subplots(3, 1)
-figure.subplots_adjust(top=0.9, left=0.1, right=0.9, hspace=0.5)
+figure.subplots_adjust(top=0.8, left=0.1, right=0.9, hspace=0.5)
+figure.patch.set_facecolor('black')
 
 for axes, img, t1_img, cut_coords, title in zip([axes1, axes2, axes3],
                                                 imgs, t1_imgs, slices, titles):
@@ -382,5 +400,9 @@ for axes, img, t1_img, cut_coords, title in zip([axes1, axes2, axes3],
                         annotate=False)
 
     display.add_overlay(img, alpha=0.75)
-    axes.set_title(title)
+    display.annotate(size=8)
+    axes.set_title(title, color='white', fontsize=12)
+
+plt.text(plt.xlim()[1], plt.ylim()[0], 't = 0.087s', color='white')
+plt.suptitle('morph subject results to fsaverage', color='white', fontsize=16)
 plt.show()
