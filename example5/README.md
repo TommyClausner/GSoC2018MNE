@@ -6,7 +6,7 @@ replace the following files in your mne folder:
 
 conf.py -> doc/conf.py
 
-conf.documentation.rst -> doc/documentation.rst
+documentation.rst -> doc/documentation.rst
 
 python_reference.rst -> doc/python_reference.rst
 
