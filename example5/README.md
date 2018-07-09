@@ -1,11 +1,11 @@
 # GSoC 2018 MNE
 
 
-### How to example 5:
+### How to example 6:
 replace the following files in your mne folder:
 
 conf.py -> doc/conf.py
-conf.documentation.rst -> doc/documentation.rst
+documentation.rst -> doc/documentation.rst
 python_reference.rst -> doc/python_reference.rst
 environment.yml -> environment.yml
 environment2.yml -> environment2.yml
