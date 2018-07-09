@@ -15,3 +15,6 @@ Referes to: https://blogs.python-gsoc.org/tommy-clausner/2018/06/11/api-pre-buil
 
 ### example 4
 Referes to: https://blogs.python-gsoc.org/tommy-clausner/2018/06/25/another-one-bites-the-dust/
+
+### example 5
+Referes to: https://blogs.python-gsoc.org/tommy-clausner/2018/07/09/a-new-class-is-born/
