@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Morphing Source Estimates using :class:`SourceMorph`
-====================================================
+Morphing Source Estimates using SourceMorph
+===========================================
 
 In this tutorial we will morph different kinds of source estimation results
 between individual subject spaces using :class:`mne.SourceMorph`.
@@ -13,6 +13,10 @@ common space. The common space of choice will be FreeSurfer's "fsaverage".
 
 Furthermore we will convert our volume source estimate into a NIfTI image using
 :meth:`morph.as_volume <mne.SourceMorph.as_volume>`.
+
+For a more detailed version of this tutorial, including some background
+information about morphing different source estimate representations, see
+:ref:`sphx_glr_auto_tutorials_plot_background_morph.py`
 """
 # Author: Tommy Clausner <tommy.clausner@gmail.com>
 #
@@ -53,87 +57,75 @@ fname_inv_vol = os.path.join(sample_dir,
 fname_t1_fsaverage = subjects_dir + '/fsaverage/mri/brain.mgz'
 
 ###############################################################################
-# Background
-# ----------
-#
-# - why -> averaging
-# - how surface (https://www.frontiersin.org/articles/10.3389/fnins.2013.00267/full)
-# - how volume (difficulty with volumes, morphing brain T1s, get affine + sdr,
-# don't forget optimization procedures)
-# - more info somewhere else (sphinx gallery)
-
-
-###############################################################################
 # Data preparation
 # ----------------
 #
 # First we load the respective example data for surface and volume source
-# estimates
+# estimates. In order to save computation time we crop our time series to a
+# short period around the peak time, that we already know. For a real case
+# scenario this might apply as well if a narrow time window of interest is
+# known in advance.
+
 stc_surf = read_source_estimate(fname_surf, subject='sample')
 
-# Afterwards we load the corresponding source spaces as well
+# The surface source space
 src_surf = read_inverse_operator(fname_inv_surf)['src']
+
+# The volume inverse operator
 inv_src = read_inverse_operator(fname_inv_vol)
+
+# The volume source space
 src_vol = inv_src['src']
 
-# ensure subject is not None
+# Ensure subject is not None
 src_vol[0]['subject_his_id'] = 'sample'
 
 # For faster computation we redefine tmin and tmax
-stc_surf.crop(0.09, 0.1)
+stc_surf.crop(0.09, 0.1)  # our prepared surface source estimate
 
+# Read pre-computed evoked data
 evoked = read_evokeds(fname_evoked, condition=0, baseline=(None, 0))
 
 # Apply inverse operator
 stc_vol = apply_inverse(evoked, inv_src, 1.0 / 3.0 ** 2, "dSPM")
 
-# To save memory
-stc_vol.crop(0.09, 0.1)
+# For faster computation we redefine tmin and tmax
+stc_vol.crop(0.09, 0.1)  # our prepared volume source estimate
 
 ###############################################################################
-# Setting up :class:`mne.SourceMorph` for :class:`mne.SourceEstimate`
-# -------------------------------------------------------------------
+# Setting up SourceMorph for SourceEstimate
+# -----------------------------------------
 #
-# - point out surface specific stuff from above and relate to code
-
-
-# SourceMorph initialization If src is not provided, the morph will not be
-# pre-computed but instead will be prepared for morphing when calling. This
-# works only with (Vector)SourceEstimate
+# :class:`SourceMorph <mne.SourceMorph>` initialization - If src is not
+# provided, the morph will not be pre-computed but instead will be prepared for
+# morphing when calling. This works only with (Vector)
+# :class:`SourceEstimate <mne.SourceEstimate>`
 
 morph_surf = SourceMorph(subject_from='sample',  # Default: None
                          subject_to='fsaverage',  # Default
-                         subjects_dir=subjects_dir,  # Default: None
-                         src=None,  # Default
-                         spacing=5,  # Default
-                         smooth=None,  # Default
-                         xhemi=False)  # Default
+                         subjects_dir=subjects_dir)  # Default: None
 
 ###############################################################################
-# Setting up :class:`mne.SourceMorph` for :class:`mne.VolSourceEstimate`
-# ----------------------------------------------------------------------
+# Setting up SourceMorph for VolSourceEstimate
+# --------------------------------------------
 #
-# - point out volume specific stuff from above and relate to code
-
 # Ideally subject_from can be inferred from src, subject_to is 'fsaverage' by
-# default and subjects_dir is set in the environment. In that case SourceMorph
-# can be initialized taking only src as parameter.
+# default and subjects_dir is set in the environment. In that case
+# :class:`SourceMorph <mne.SourceMorph>` can be initialized taking only src as
+# argument (for better understanding more keyword arguments are defined).
 
 morph_vol = SourceMorph(subject_from='sample',  # Default: None
                         subject_to='fsaverage',  # Default
                         subjects_dir=subjects_dir,  # Default: None
-                        spacing=(3., 3., 3.),  # grid spacing (3., 3., 3.) mm
-                        src=src_vol,  # Default: None
-                        niter_affine=(100, 100, 10),  # Default
-                        niter_sdr=(5, 5, 3))  # Default
+                        src=src_vol)  # Default: None
 
 ###############################################################################
-# Applying an instance of :class:`mne.SourceMorph`
-# ------------------------------------------------
+# Applying an instance of SourceMorph
+# -----------------------------------
 #
 # Once we computed the morph for our respective dataset, we can morph the data,
-# by giving it as an argument to the SourceMorph instance. This operation
-# applies pre-computed transforms to stc.
+# by giving it as an argument to the :class:`SourceMorph <mne.SourceMorph>`
+# instance. This operation applies pre-computed transforms to stc.
 
 stc_surf_m = morph_surf(stc_surf)  # SourceEstimate | VectorSourceEstimate
 stc_vol_m = morph_vol(stc_vol)  # VolSourceEstimate
@@ -155,6 +147,28 @@ stc_vol_m = morph_vol(stc_vol)  # VolSourceEstimate
 # -morph.h5 was attached because no file extension was provided when saving
 # morph_vol = read_source_morph('my-file-name-morph.h5')
 
+###############################################################################
+# Additional functionality and shortcuts
+# --------------------------------------
+#
+# In addition to the functionality, demonstrated above, SourceMorph can be used
+# slightly different as well, in order to enhance user comfort.
+#
+# For instance, it is possible to directly obtain a NIfTI image when calling
+# the SourceMorph instance, but setting 'as_volume=True'. If so, the __call__()
+# function takes the same input arguments as
+# :meth:`morph.as_volume <mne.SourceMorph.as_volume>`.
+#
+# Moreover it can be decided whether to actually apply the morph or not by
+# setting the 'apply_morph' argument to True
+#
+# img_fsaverage = morph(stc, as_volume=True, apply_morph=True)
+#
+# Since once the environment is set up correctly, SourceMorph can be used
+# without assigning an instance to a variable. Instead the __init__ and
+# __call__ methods of SourceMorph can be combined into a handy one-liner:
+#
+# stc_fsaverage = mne.SourceMorph(src=src)(stc)
 
 ###############################################################################
 # Plot results
@@ -184,12 +198,13 @@ overlay = index_img(morph_vol.as_volume(stc_vol_m, mri_resolution=True), 0)
 
 display.add_overlay(overlay, alpha=0.75)
 display.annotate(size=8)
-axes.set_title('Morphed to fsaverage', color='white', fontsize=20)
+axes.set_title('Morphed to fsaverage', color='black', fontsize=16)
 
-plt.text(plt.xlim()[1], plt.ylim()[0], 't = 0.09s', color='white')
+plt.text(plt.xlim()[1], plt.ylim()[0], 't = 0.09s', color='black')
 plt.show()
 
-del stc_vol_m, morph_vol, morph_surf
+# save some memory
+del stc_vol_m, morph_vol, morph_surf, t1_fsaverage
 
 # Plot morphed surface source estiamte
 
@@ -199,6 +214,4 @@ surfer_kwargs = dict(
     initial_time=0.09, time_unit='s', size=(800, 800),
     smoothing_steps=5)
 brain = stc_surf_m.plot(**surfer_kwargs)
-brain.add_text(0.1, 0.9, 'Morphed to fsaverage', 'title', font_size=20)
-
-del stc_surf_m
+brain.add_text(0.1, 0.9, 'Morphed to fsaverage', 'title', font_size=16)
