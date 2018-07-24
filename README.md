@@ -18,3 +18,6 @@ Referes to: https://blogs.python-gsoc.org/tommy-clausner/2018/06/25/another-one-
 
 ### example 5
 Referes to: https://blogs.python-gsoc.org/tommy-clausner/2018/07/09/a-new-class-is-born/
+
+### example 6
+Referes to: https://blogs.python-gsoc.org/tommy-clausner/2018/07/24/were-getting-there/
