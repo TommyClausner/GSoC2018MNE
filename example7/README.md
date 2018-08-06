@@ -1,7 +1,7 @@
 # GSoC 2018 MNE
 
 
-### How to example 6:
+### How to example 7:
 replace the files in the MNE root directory, with the files in example6. The dependencies are as if example6 was MNE's root directory.
 
 Afterwards navigate to the mne folder via terminal and execute:
