@@ -2,7 +2,7 @@
 
 
 ### How to example 7:
-replace the files in the MNE root directory, with the files in example6. The dependencies are as if example6 was MNE's root directory.
+replace the files in the MNE root directory, with the files in example7. The dependencies are as if example7 was MNE's root directory.
 
 Afterwards navigate to the mne folder via terminal and execute:
 
