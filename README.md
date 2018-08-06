@@ -22,5 +22,5 @@ Referes to: https://blogs.python-gsoc.org/tommy-clausner/2018/07/09/a-new-class-
 ### example 6
 Referes to: https://blogs.python-gsoc.org/tommy-clausner/2018/07/24/were-getting-there/
 
-### example 6
+### example 7
 Referes to: https://blogs.python-gsoc.org/tommy-clausner/2018/08/06/there-is-light/ ‎
